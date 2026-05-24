@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeadForge AI — Lead Enrichment & Outreach Automation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <style>
+    /* =====================================================
+       CSS VARIABLES & RESET
+    ===================================================== */
+    :root {
+      --bg-void:       #040610;
+      --bg-surface:    #080d1a;
+      --bg-card:       rgba(12, 18, 35, 0.85);
+      --bg-card-hover: rgba(16, 24, 48, 0.95);
+      --border:        rgba(99, 140, 255, 0.13);
+      --border-glow:   rgba(99, 140, 255, 0.35);
+      --accent-blue:   #4f7dff;
+      --accent-cyan:   #00d4ff;
+      --accent-violet: #8b5cf6;
+      --accent-green:  #10e8a0;
+      --accent-amber:  #f59e0b;
+      --accent-rose:   #f43f5e;
+      --text-primary:  #e8eeff;
+      --text-secondary:#8b9cc8;
+      --text-muted:    #4a5578;
+      --grad-main:     linear-gradient(135deg, #4f7dff 0%, #8b5cf6 50%, #00d4ff 100%);
+      --grad-card:     linear-gradient(145deg, rgba(79,125,255,0.08) 0%, rgba(139,92,246,0.06) 100%);
+      --shadow-card:   0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,140,255,0.08);
+      --shadow-glow:   0 0 40px rgba(79,125,255,0.25);
+      --radius-lg:     20px;
+      --radius-md:     14px;
+      --radius-sm:     8px;
+      --transition:    all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-blue) var(--bg-void);
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-void); }
+    ::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 3px; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-void);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* =====================================================
+       ANIMATED BACKGROUND CANVAS
+    ===================================================== */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+      animation: orbFloat 18s ease-in-out infinite;
+    }
+    .orb-1 { width: 600px; height: 600px; background: var(--accent-blue);   top: -200px; left: -150px; animation-delay: 0s; }
+    .orb-2 { width: 500px; height: 500px; background: var(--accent-violet); top: 30%;   right: -150px; animation-delay: -6s; }
+    .orb-3 { width: 400px; height: 400px; background: var(--accent-cyan);   bottom: -100px; left: 30%; animation-delay: -12s; }
+
+    @keyframes orbFloat {
+      0%,100% { transform: translateY(0) scale(1); }
+      33%      { transform: translateY(-40px) scale(1.05); }
+      66%      { transform: translateY(20px) scale(0.97); }
+    }
+
+    /* =====================================================
+       LAYOUT WRAPPER
+    ===================================================== */
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* =====================================================
+       NAVIGATION
+    ===================================================== */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 16px 0;
+      background: rgba(4,6,16,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--grad-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(79,125,255,0.4);
+    }
+
+    .logo span.accent { background: var(--grad-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .nav-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      background: rgba(79,125,255,0.15);
+      border: 1px solid rgba(79,125,255,0.3);
+      border-radius: 20px;
+      color: var(--accent-blue);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+    .nav-links a:hover { color: var(--text-primary); }
+
+    .btn-nav {
+      padding: 8px 20px;
+      background: var(--grad-main);
+      border: none;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 0 20px rgba(79,125,255,0.3);
+    }
+    .btn-nav:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 0 30px rgba(79,125,255,0.5); }
+
+    /* =====================================================
+       HERO SECTION
+    ===================================================== */
+    .hero {
+      padding: 100px 0 80px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(79,125,255,0.1);
+      border: 1px solid rgba(79,125,255,0.25);
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--accent-cyan);
+      margin-bottom: 32px;
+      animation: fadeInDown 0.6s ease both;
+    }
+
+    .hero-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      animation: fadeInDown 0.7s 0.1s ease both;
+    }
+
+    .hero h1 .grad {
+      background: var(--grad-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      max-width: 560px;
+      margin: 0 auto 40px;
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-weight: 300;
+      animation: fadeInDown 0.7s 0.2s ease both;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 56px;
+      animation: fadeInDown 0.7s 0.3s ease both;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: var(--grad-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =====================================================
+       GLASS CARD BASE
+    ===================================================== */
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      backdrop-filter: blur(24px);
+      box-shadow: var(--shadow-card);
+      transition: var(--transition);
+    }
+
+    .glass-card:hover {
+      border-color: var(--border-glow);
+      box-shadow: var(--shadow-card), var(--shadow-glow);
+    }
+
+    /* =====================================================
+       LEAD FORM SECTION
+    ===================================================== */
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .section-title .icon-badge {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .form-section { margin-bottom: 40px; }
+
+    .form-card {
+      padding: 36px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    input, select, textarea {
+      background: rgba(8, 13, 26, 0.7);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: var(--transition);
+      outline: none;
+      width: 100%;
+    }
+
+    input::placeholder, textarea::placeholder { color: var(--text-muted); }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(79,125,255,0.12);
+      background: rgba(12, 18, 40, 0.9);
+    }
+
+    select option { background: #0c1228; color: var(--text-primary); }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    /* =====================================================
+       BUTTONS
+    ===================================================== */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 32px;
+      background: var(--grad-main);
+      border: none;
+      border-radius: 40px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 8px 32px rgba(79,125,255,0.35);
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: var(--transition);
+    }
+
+    .btn-primary:hover::before { background: rgba(255,255,255,0.08); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 48px rgba(79,125,255,0.5); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: rgba(79,125,255,0.1);
+      border: 1px solid rgba(79,125,255,0.25);
+      border-radius: 40px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--accent-blue);
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover { background: rgba(79,125,255,0.2); border-color: rgba(79,125,255,0.5); transform: translateY(-1px); }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* =====================================================
+       SPINNER / LOADER
+    ===================================================== */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* =====================================================
+       RESULTS SECTION
+    ===================================================== */
+    .results-section { margin-bottom: 40px; display: none; }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .result-card {
+      padding: 24px;
+    }
+
+    .result-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .result-card-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .result-card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .result-card-body {
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      line-height: 1.7;
+    }
+
+    /* Score Ring */
+    .score-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .score-ring-wrapper {
+      position: relative;
+      width: 110px; height: 110px;
+    }
+
+    .score-ring {
+      transform: rotate(-90deg);
+    }
+
+    .score-ring-bg {
+      fill: none;
+      stroke: rgba(99,140,255,0.12);
+      stroke-width: 8;
+    }
+
+    .score-ring-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke: url(#scoreGrad);
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .score-number {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+
+    .score-label-small { font-size: 0.65rem; color: var(--text-muted); font-family: 'DM Sans', sans-serif; margin-top: -4px; }
+
+    .score-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    /* AI Typing animation */
+    .typing-cursor::after {
+      content: '|';
+      animation: blink 0.8s step-end infinite;
+      color: var(--accent-blue);
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* Email card */
+    .email-card { padding: 28px; }
+
+    .email-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .email-body {
+      font-size: 0.875rem;
+      line-height: 1.75;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      border-left: 3px solid var(--accent-blue);
+      padding-left: 16px;
+      font-style: italic;
+    }
+
+    .copy-btn {
+      padding: 6px 14px;
+      background: rgba(0,212,255,0.1);
+      border: 1px solid rgba(0,212,255,0.25);
+      border-radius: 20px;
+      font-size: 0.78rem;
+      color: var(--accent-cyan);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .copy-btn:hover { background: rgba(0,212,255,0.2); }
+
+    /* Insights tags */
+    .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+    .tag {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .tag-blue   { background: rgba(79,125,255,0.15);  border: 1px solid rgba(79,125,255,0.3);  color: var(--accent-blue); }
+    .tag-violet { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); color: var(--accent-violet); }
+    .tag-green  { background: rgba(16,232,160,0.15); border: 1px solid rgba(16,232,160,0.3); color: var(--accent-green); }
+    .tag-amber  { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: var(--accent-amber); }
+    .tag-cyan   { background: rgba(0,212,255,0.12);  border: 1px solid rgba(0,212,255,0.3);  color: var(--accent-cyan); }
+
+    /* =====================================================
+       LEAD HISTORY TABLE
+    ===================================================== */
+    .history-section { margin-bottom: 40px; }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(8,13,26,0.8);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 8px 16px;
+    }
+
+    .search-bar i { color: var(--text-muted); font-size: 0.85rem; }
+    .search-bar input {
+      background: transparent;
+      border: none;
+      padding: 0;
+      font-size: 0.875rem;
+      width: 180px;
+      color: var(--text-primary);
+    }
+    .search-bar input:focus { box-shadow: none; }
+
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--radius-lg);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    thead th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      background: rgba(8,13,26,0.9);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    thead th:first-child { border-radius: var(--radius-md) 0 0 0; }
+    thead th:last-child  { border-radius: 0 var(--radius-md) 0 0; }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(99,140,255,0.06);
+      transition: var(--transition);
+    }
+
+    tbody tr:hover { background: rgba(79,125,255,0.05); }
+
+    tbody td {
+      padding: 14px 16px;
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; }
+    .empty-state p { font-size: 0.875rem; }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .score-high   { background: rgba(16,232,160,0.15); color: var(--accent-green); }
+    .score-medium { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+    .score-low    { background: rgba(244,63,94,0.15);  color: var(--accent-rose); }
+
+    /* =====================================================
+       FEATURES CARDS
+    ===================================================== */
+    .features-section { margin-bottom: 60px; }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .feature-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .feature-card p {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* =====================================================
+       TOAST NOTIFICATIONS
+    ===================================================== */
+    .toast-container {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: rgba(12, 18, 35, 0.98);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      min-width: 260px;
+      max-width: 360px;
+      animation: slideInRight 0.35s cubic-bezier(0.4,0,0.2,1);
+      cursor: pointer;
+    }
+
+    .toast.success .toast-icon { color: var(--accent-green); }
+    .toast.error   .toast-icon { color: var(--accent-rose); }
+    .toast.info    .toast-icon { color: var(--accent-blue); }
+    .toast.warning .toast-icon { color: var(--accent-amber); }
+
+    .toast.fade-out { animation: slideOutRight 0.3s ease forwards; }
+
+    @keyframes slideInRight  { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes slideOutRight { to{opacity:0;transform:translateX(40px)} }
+
+    /* =====================================================
+       SKELETON LOADER
+    ===================================================== */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(99,140,255,0.06) 25%, rgba(99,140,255,0.14) 50%, rgba(99,140,255,0.06) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    .skeleton-line { height: 14px; margin-bottom: 8px; }
+    .skeleton-line.w-full { width: 100%; }
+    .skeleton-line.w-3q   { width: 75%; }
+    .skeleton-line.w-half { width: 50%; }
+
+    /* =====================================================
+       CONFIDENCE BADGE
+    ===================================================== */
+    .confidence-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(16,232,160,0.1);
+      border: 1px solid rgba(16,232,160,0.25);
+      color: var(--accent-green);
+    }
+
+    /* =====================================================
+       FOOTER
+    ===================================================== */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    .footer-brand {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .footer-brand span {
+      background: var(--grad-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    footer a {
+      color: var(--accent-blue);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    footer a:hover { color: var(--accent-cyan); }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+
+    /* =====================================================
+       SETUP MODAL
+    ===================================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4,6,16,0.85);
+      backdrop-filter: blur(10px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    .modal-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: var(--shadow-card);
+    }
+
+    .modal-box h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .modal-box p { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6; }
+
+    .url-input-wrap { display: flex; gap: 10px; }
+    .url-input-wrap input { flex: 1; }
+
+    .modal-note {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      color: var(--accent-amber);
+      line-height: 1.6;
+    }
+
+    /* =====================================================
+       RESPONSIVE
+    ===================================================== */
+    @media (max-width: 768px) {
+      .hero { padding: 60px 0 50px; }
+      .form-card { padding: 24px; }
+      .email-card { padding: 20px; }
+      .hero-stats { gap: 24px; }
+      .nav-links { display: none; }
+    }
+
+    /* =====================================================
+       UTILITY
+    ===================================================== */
+    .hidden { display: none !important; }
+    .mt-4 { margin-top: 16px; }
+    .mt-6 { margin-top: 24px; }
+    .text-grad { background: var(--grad-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- SVG Gradient Defs for score ring -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"   stop-color="#4f7dff"/>
+        <stop offset="50%"  stop-color="#8b5cf6"/>
+        <stop offset="100%" stop-color="#00d4ff"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- ============================================================
+       NAVIGATION
+  ============================================================ -->
+  <nav>
+    <div class="nav-inner">
+      <a class="logo" href="#">
+        <div class="logo-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+        Lead<span class="accent">Forge</span> AI
+      </a>
+      <div class="nav-links">
+        <a href="#form-section">Enrich Lead</a>
+        <a href="#history-section">History</a>
+        <a href="#features-section">Features</a>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="nav-badge">v2.0 Beta</span>
+        <button class="btn-nav" onclick="openSetupModal()"><i class="fa-solid fa-gear"></i> Setup</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       HERO
+  ============================================================ -->
+  <section class="hero">
+    <div class="wrapper">
+      <div class="hero-badge">
+        <div class="dot"></div>
+        Powered by OpenAI GPT-4o · Apps Script · Google Sheets
+      </div>
+
+      <h1>
+        Enrich Leads with<br/>
+        <span class="grad">AI Precision.</span>
+      </h1>
+
+      <p>
+        Drop in a company. Get an AI-crafted business summary, ICP analysis,
+        personalized outreach email, lead score, and marketing insights — saved automatically to Google Sheets.
+      </p>
+
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="stat-number" id="stat-leads">0</div>
+          <div class="stat-label">Leads Enriched</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">~8s</div>
+          <div class="stat-label">Avg. Generation Time</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">5</div>
+          <div class="stat-label">AI Outputs</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Free Tier</div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="scrollToForm()">
+        <i class="fa-solid fa-rocket"></i>
+        Enrich Your First Lead
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MAIN CONTENT
+  ============================================================ -->
+  <main class="wrapper">
+
+    <!-- ======================= FORM SECTION ======================= -->
+    <section class="form-section" id="form-section">
+      <div class="section-title">
+        <div class="icon-badge" style="background:rgba(79,125,255,0.15);color:var(--accent-blue);">
+          <i class="fa-solid fa-magnifying-glass-chart"></i>
+        </div>
+        Lead Intelligence Form
+      </div>
+
+      <div class="glass-card form-card">
+        <div class="form-grid">
+          <div class="field-group">
+            <label for="companyName"><i class="fa-solid fa-building"></i> Company Name *</label>
+            <input type="text" id="companyName" placeholder="e.g. Acme Corp" required />
+          </div>
+          <div class="field-group">
+            <label for="website"><i class="fa-solid fa-globe"></i> Website</label>
+            <input type="url" id="website" placeholder="https://example.com" />
+          </div>
+          <div class="field-group">
+            <label for="industry"><i class="fa-solid fa-industry"></i> Industry *</label>
+            <select id="industry" required>
+              <option value="">Select Industry</option>
+              <option>SaaS / Software</option>
+              <option>E-commerce / Retail</option>
+              <option>FinTech / Finance</option>
+              <option>HealthTech / Healthcare</option>
+              <option>EdTech / Education</option>
+              <option>MarTech / Marketing</option>
+              <option>Real Estate</option>
+              <option>Manufacturing</option>
+              <option>Consulting / Services</option>
+              <option>HR / Recruitment</option>
+              <option>Legal</option>
+              <option>Media / Entertainment</option>
+              <option>Logistics / Supply Chain</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="targetAudience"><i class="fa-solid fa-users-rectangle"></i> Target Audience *</label>
+            <input type="text" id="targetAudience" placeholder="e.g. Mid-market B2B SaaS CMOs" />
+          </div>
+          <div class="field-group full">
+            <label for="notes"><i class="fa-solid fa-note-sticky"></i> Additional Notes / Context</label>
+            <textarea id="notes" placeholder="Pain points, goals, recent news, competitors, tech stack…"></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" id="analyzeBtn" onclick="analyzeLead()">
+            <div class="spinner" id="spinner"></div>
+            <i class="fa-solid fa-microchip" id="btnIcon"></i>
+            <span id="btnText">Generate AI Insights</span>
+          </button>
+          <button class="btn-secondary" onclick="clearForm()">
+            <i class="fa-solid fa-rotate-left"></i> Clear
+          </button>
+          <span style="font-size:0.78rem;color:var(--text-muted);margin-left:auto;">
+            <i class="fa-solid fa-lock" style="color:var(--accent-green);"></i>
+            API key stored securely in Apps Script
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= RESULTS SECTION ======================= -->
+    <section class="results-section" id="results-section">
+      <div class="section-title">
+        <div class="icon-badge" style="background:rgba(16,232,160,0.15);color:var(--accent-green);">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        AI Analysis Results
+        <span class="confidence-badge"><i class="fa-solid fa-circle-check"></i> High Confidence</span>
+      </div>
+
+      <!-- Top row: Summary, Score, ICP -->
+      <div class="results-grid">
+
+        <!-- Business Summary -->
+        <div class="glass-card result-card" style="grid-column:span 2;" id="summaryCard">
+          <div class="result-card-header">
+            <div class="result-card-icon" style="background:rgba(79,125,255,0.15);color:var(--accent-blue);">
+              <i class="fa-solid fa-building-columns"></i>
+            </div>
+            <div>
+              <div class="result-card-title">Business Summary</div>
+            </div>
+          </div>
+          <div class="result-card-body" id="summaryText"></div>
+        </div>
+
+        <!-- Lead Score -->
+        <div class="glass-card result-card" id="scoreCard">
+          <div class="result-card-header">
+            <div class="result-card-icon" style="background:rgba(139,92,246,0.15);color:var(--accent-violet);">
+              <i class="fa-solid fa-star-half-stroke"></i>
+            </div>
+            <div class="result-card-title">Lead Score</div>
+          </div>
+          <div class="score-container">
+            <div class="score-ring-wrapper">
+              <svg class="score-ring" width="110" height="110" viewBox="0 0 110 110">
+                <circle class="score-ring-bg" cx="55" cy="55" r="46"/>
+                <circle class="score-ring-fill" id="scoreRingFill" cx="55" cy="55" r="46"
+                  stroke-dasharray="289" stroke-dashoffset="289"/>
+              </svg>
+              <div class="score-number">
+                <span id="scoreNum" style="background:var(--grad-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">0</span>
+                <span class="score-label-small">/100</span>
+              </div>
+            </div>
+            <span class="score-badge tag-green" id="scoreBadgeLabel">Calculating…</span>
+            <div style="font-size:0.78rem;color:var(--text-muted);text-align:center;" id="scoreReason"></div>
+          </div>
+        </div>
+
+        <!-- ICP Analysis -->
+        <div class="glass-card result-card" id="icpCard">
+          <div class="result-card-header">
+            <div class="result-card-icon" style="background:rgba(0,212,255,0.12);color:var(--accent-cyan);">
+              <i class="fa-solid fa-crosshairs"></i>
+            </div>
+            <div class="result-card-title">ICP Analysis</div>
+          </div>
+          <div class="result-card-body" id="icpText"></div>
+        </div>
+
+      </div>
+
+      <!-- Outreach Email -->
+      <div class="glass-card email-card mt-6" id="emailCard">
+        <div class="email-header">
+          <div class="result-card-header" style="margin-bottom:0;">
+            <div class="result-card-icon" style="background:rgba(245,158,11,0.15);color:var(--accent-amber);">
+              <i class="fa-solid fa-envelope-open-text"></i>
+            </div>
+            <div>
+              <div class="result-card-title">AI-Generated Outreach Email</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">Personalized · Ready to send</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="copy-btn" onclick="copyEmail()"><i class="fa-solid fa-copy"></i> Copy Email</button>
+          </div>
+        </div>
+        <div class="email-body" id="emailText"></div>
+      </div>
+
+      <!-- Marketing Insights -->
+      <div class="glass-card result-card mt-6" id="insightsCard">
+        <div class="result-card-header">
+          <div class="result-card-icon" style="background:rgba(16,232,160,0.12);color:var(--accent-green);">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <div class="result-card-title">Marketing Insights & Workflow Recommendations</div>
+        </div>
+        <div id="insightsTags" class="tags-container"></div>
+        <div class="result-card-body mt-4" id="insightsText"></div>
+      </div>
+
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ======================= HISTORY TABLE ======================= -->
+    <section class="history-section" id="history-section">
+      <div class="history-header">
+        <div class="section-title" style="margin-bottom:0;">
+          <div class="icon-badge" style="background:rgba(245,158,11,0.12);color:var(--accent-amber);">
+            <i class="fa-solid fa-table-list"></i>
+          </div>
+          Lead History
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+          <div class="search-bar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search leads…" oninput="filterLeads()" />
+          </div>
+          <button class="btn-secondary" onclick="loadLeadHistory()">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh
+          </button>
+          <button class="btn-secondary" onclick="exportLeads()">
+            <i class="fa-solid fa-file-export"></i> Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Company</th>
+              <th>Industry</th>
+              <th>Score</th>
+              <th>Target Audience</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="leadsTableBody">
+            <tr>
+              <td colspan="6">
+                <div class="empty-state">
+                  <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
+                  <p>No leads yet. Enrich your first lead above.</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ======================= FEATURES ======================= -->
+    <section class="features-section" id="features-section">
+      <div class="section-title" style="margin-bottom:28px;">
+        <div class="icon-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-violet);">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        Platform Capabilities
+      </div>
+
+      <div class="features-grid">
+        <div class="glass-card feature-card">
+          <div class="feature-icon" style="background:rgba(79,125,255,0.12);color:var(--accent-blue);">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <h3>GPT-4o Intelligence</h3>
+          <p>Advanced AI generates real business summaries, ICP profiles, and tailored outreach — not generic templates.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon" style="background:rgba(16,232,160,0.12);color:var(--accent-green);">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3>Zero-Exposure Security</h3>
+          <p>OpenAI API key stored exclusively in Apps Script Properties — never transmitted to or from the browser.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon" style="background:rgba(0,212,255,0.1);color:var(--accent-cyan);">
+            <i class="fa-brands fa-google-drive"></i>
+          </div>
+          <h3>Auto Google Sheets</h3>
+          <p>Every enriched lead is auto-saved with structured formatting, frozen headers, and duplicate prevention.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-amber);">
+            <i class="fa-solid fa-chart-pie"></i>
+          </div>
+          <h3>Smart Lead Scoring</h3>
+          <p>AI evaluates signal strength, market fit, and engagement potential to produce a weighted 1–100 lead score.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon" style="background:rgba(139,92,246,0.15);color:var(--accent-violet);">
+            <i class="fa-solid fa-envelope-circle-check"></i>
+          </div>
+          <h3>Personalized Outreach</h3>
+          <p>One-click personalized cold email generation tailored to the company's vertical, pain points, and ICP.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon" style="background:rgba(244,63,94,0.12);color:var(--accent-rose);">
+            <i class="fa-solid fa-gear"></i>
+          </div>
+          <h3>GTM Workflow Ready</h3>
+          <p>Built to simulate real RevOps automation — export to CSV, sync to Sheets, and integrate into any CRM.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       FOOTER
+  ============================================================ -->
+  <footer>
+    <div class="wrapper">
+      <div class="footer-brand">LeadForge <span>AI</span></div>
+      <p>AI Lead Enrichment & Outreach Automation System</p>
+      <div class="footer-links">
+        <a href="https://linkedin.com/in/yugalofficial" target="_blank">
+          <i class="fa-brands fa-linkedin"></i> LinkedIn
+        </a>
+        <a href="https://github.com" target="_blank">
+          <i class="fa-brands fa-github"></i> GitHub
+        </a>
+      </div>
+      <p style="color:var(--text-muted);">
+        Designed &amp; Developed by <strong style="color:var(--text-primary);">Yugal</strong> ·
+        <a href="https://linkedin.com/in/yugalofficial" target="_blank">linkedin.com/in/yugalofficial</a>
+      </p>
+      <p style="margin-top:10px;font-size:0.75rem;color:var(--text-muted);">
+        Built with Google Apps Script · OpenAI GPT-4o · Vanilla JS · No frameworks needed.
+      </p>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       SETUP MODAL
+  ============================================================ -->
+  <div class="modal-overlay hidden" id="setupModal">
+    <div class="modal-box">
+      <h2><i class="fa-solid fa-plug" style="color:var(--accent-blue);margin-right:8px;"></i>Connect Apps Script</h2>
+      <p>
+        Paste your deployed Google Apps Script <strong>Web App URL</strong> below.
+        This is where your AI generation and Google Sheets backend lives.
+      </p>
+      <div class="url-input-wrap">
+        <input type="url" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/…/exec" />
+        <button class="btn-primary" onclick="saveAppsScriptUrl()">Save</button>
+      </div>
+      <div class="modal-note">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <strong>Setup Steps:</strong><br/>
+        1. Copy <code>Code.gs</code> into a new Google Apps Script project.<br/>
+        2. Go to <em>Project Settings → Script Properties</em> and add:<br/>
+        &nbsp;&nbsp;• Key: <code>OPENAI_API_KEY</code> → Value: your OpenAI key<br/>
+        3. Deploy as <em>Web App</em> (Execute as: Me · Anyone can access).<br/>
+        4. Copy the Web App URL and paste it above.
+      </div>
+      <div class="form-actions" style="margin-top:20px;">
+        <button class="btn-secondary" onclick="closeSetupModal()">Close</button>
+        <button class="btn-primary" onclick="testConnection()">
+          <i class="fa-solid fa-wifi"></i> Test Connection
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TOAST CONTAINER
+  ============================================================ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ============================================================
+       JAVASCRIPT
+  ============================================================ -->
+  <script>
+    // =====================================================
+    // CONFIG — Replace APPS_SCRIPT_WEBAPP_URL if hardcoding
+    // =====================================================
+    const CONFIG = {
+      appsScriptUrl: localStorage.getItem('appsScriptUrl') || 'APPS_SCRIPT_WEBAPP_URL',
+    };
+
+    // Cached leads for search/filter
+    let allLeads = [];
+
+    // =====================================================
+    // INITIALIZATION
+    // =====================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      animateStats();
+      loadLeadHistory();
+      if (!localStorage.getItem('appsScriptUrl')) {
+        setTimeout(() => openSetupModal(), 1200);
+      }
+    });
+
+    // Animate hero stat numbers
+    function animateStats() {
+      animateCounter('stat-leads', 0, 0, 1200);
+    }
+
+    function animateCounter(id, from, to, duration) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const start = performance.now();
+      function update(now) {
+        const p = Math.min((now - start) / duration, 1);
+        el.textContent = Math.round(from + (to - from) * easeOut(p));
+        if (p < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+    // =====================================================
+    // SETUP MODAL
+    // =====================================================
+    function openSetupModal() { document.getElementById('setupModal').classList.remove('hidden'); }
+    function closeSetupModal() { document.getElementById('setupModal').classList.add('hidden'); }
+
+    function saveAppsScriptUrl() {
+      const url = document.getElementById('appsScriptUrl').value.trim();
+      if (!url || !url.startsWith('http')) {
+        showToast('Please enter a valid Apps Script URL.', 'error'); return;
+      }
+      CONFIG.appsScriptUrl = url;
+      localStorage.setItem('appsScriptUrl', url);
+      showToast('Apps Script URL saved!', 'success');
+      closeSetupModal();
+      loadLeadHistory();
+    }
+
+    async function testConnection() {
+      const url = document.getElementById('appsScriptUrl').value.trim() || CONFIG.appsScriptUrl;
+      if (!url || url === 'APPS_SCRIPT_WEBAPP_URL') {
+        showToast('Enter an Apps Script URL first.', 'warning'); return;
+      }
+      showToast('Testing connection…', 'info');
+      try {
+        const res = await fetch(`${url}?action=ping`, { method: 'GET' });
+        const data = await res.json();
+        if (data.status === 'ok') showToast('Connection successful! 🎉', 'success');
+        else showToast('Connected but unexpected response.', 'warning');
+      } catch {
+        showToast('Connection failed. Check the URL and deployment settings.', 'error');
+      }
+    }
+
+    // =====================================================
+    // SCROLL HELPER
+    // =====================================================
+    function scrollToForm() {
+      document.getElementById('form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // =====================================================
+    // FORM ACTIONS
+    // =====================================================
+    function clearForm() {
+      ['companyName','website','industry','targetAudience','notes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      document.getElementById('results-section').style.display = 'none';
+    }
+
+    // =====================================================
+    // MAIN: ANALYZE LEAD
+    // =====================================================
+    async function analyzeLead() {
+      const companyName    = document.getElementById('companyName').value.trim();
+      const website        = document.getElementById('website').value.trim();
+      const industry       = document.getElementById('industry').value;
+      const targetAudience = document.getElementById('targetAudience').value.trim();
+      const notes          = document.getElementById('notes').value.trim();
+
+      // Validation
+      if (!companyName)    { showToast('Company name is required.', 'error'); return; }
+      if (!industry)       { showToast('Please select an industry.', 'error'); return; }
+      if (!targetAudience) { showToast('Target audience is required.', 'error'); return; }
+
+      if (CONFIG.appsScriptUrl === 'APPS_SCRIPT_WEBAPP_URL') {
+        showToast('Connect your Apps Script URL in Setup first.', 'warning');
+        openSetupModal();
+        return;
+      }
+
+      setLoading(true);
+
+      // Show skeleton results panel
+      showResultsSkeleton();
+
+      const payload = { action: 'analyzeLead', companyName, website, industry, targetAudience, notes };
+
+      try {
+        const response = await fetch(CONFIG.appsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' }, // Apps Script CORS workaround
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+
+        if (data.success) {
+          renderResults(data);
+          showToast(`✨ Lead enriched & saved to Google Sheets!`, 'success');
+          loadLeadHistory();
+        } else {
+          throw new Error(data.error || 'Unknown error from Apps Script.');
+        }
+
+      } catch (err) {
+        console.error(err);
+        showToast(`Error: ${err.message}`, 'error');
+        document.getElementById('results-section').style.display = 'none';
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // =====================================================
+    // LOADING STATE
+    // =====================================================
+    function setLoading(loading) {
+      const btn     = document.getElementById('analyzeBtn');
+      const spinner = document.getElementById('spinner');
+      const icon    = document.getElementById('btnIcon');
+      const text    = document.getElementById('btnText');
+
+      btn.disabled = loading;
+      spinner.style.display  = loading ? 'block' : 'none';
+      icon.style.display     = loading ? 'none'  : 'inline-block';
+      text.textContent       = loading ? 'Generating AI Insights…' : 'Generate AI Insights';
+    }
+
+    // =====================================================
+    // SKELETON LOADER
+    // =====================================================
+    function showResultsSkeleton() {
+      const section = document.getElementById('results-section');
+      section.style.display = 'block';
+
+      const skLines = () => `
+        <div class="skeleton skeleton-line w-full"></div>
+        <div class="skeleton skeleton-line w-3q"></div>
+        <div class="skeleton skeleton-line w-half"></div>
+      `;
+
+      document.getElementById('summaryText').innerHTML  = skLines();
+      document.getElementById('icpText').innerHTML      = skLines();
+      document.getElementById('emailText').innerHTML    = skLines();
+      document.getElementById('insightsText').innerHTML = skLines();
+      document.getElementById('insightsTags').innerHTML = '';
+      document.getElementById('scoreNum').textContent   = '—';
+      document.getElementById('scoreBadgeLabel').textContent = 'Calculating…';
+
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // =====================================================
+    // RENDER RESULTS
+    // =====================================================
+    function renderResults(data) {
+      const section = document.getElementById('results-section');
+      section.style.display = 'block';
+
+      // Business Summary
+      typewriterEffect('summaryText', data.summary || '—');
+
+      // Lead Score
+      const score = parseInt(data.leadScore) || 0;
+      animateScore(score);
+
+      // ICP Analysis
+      typewriterEffect('icpText', data.icpAnalysis || '—');
+
+      // Outreach Email
+      document.getElementById('emailText').textContent = data.outreachEmail || '—';
+
+      // Marketing Insights
+      typewriterEffect('insightsText', data.marketingInsights || '—');
+      renderInsightsTags(data.tags || []);
+
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Typewriter effect for text
+    function typewriterEffect(elementId, text, speed = 10) {
+      const el = document.getElementById(elementId);
+      el.innerHTML = '';
+      el.classList.add('typing-cursor');
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          el.textContent += text[i++];
+          setTimeout(type, speed);
+        } else {
+          el.classList.remove('typing-cursor');
+        }
+      }
+      type();
+    }
+
+    // Animate score ring
+    function animateScore(score) {
+      const ringFill = document.getElementById('scoreRingFill');
+      const scoreNum = document.getElementById('scoreNum');
+      const badge    = document.getElementById('scoreBadgeLabel');
+      const reason   = document.getElementById('scoreReason');
+
+      const circumference = 289;
+      const offset = circumference - (score / 100) * circumference;
+
+      // Animate ring
+      setTimeout(() => {
+        ringFill.style.strokeDashoffset = offset;
+      }, 100);
+
+      // Animate number
+      let current = 0;
+      const interval = setInterval(() => {
+        current += 2;
+        if (current >= score) { current = score; clearInterval(interval); }
+        scoreNum.textContent = current;
+      }, 20);
+
+      // Badge
+      if (score >= 75) {
+        badge.className = 'score-badge tag-green';
+        badge.textContent = '🔥 Hot Lead';
+        reason.textContent = 'Strong fit — prioritize outreach.';
+      } else if (score >= 50) {
+        badge.className = 'score-badge tag-amber';
+        badge.textContent = '⚡ Warm Lead';
+        reason.textContent = 'Good potential — nurture and qualify.';
+      } else {
+        badge.className = 'score-badge tag-cyan';
+        badge.textContent = '❄️ Cold Lead';
+        reason.textContent = 'Early stage — monitor and educate.';
+      }
+    }
+
+    // Render insight tags
+    function renderInsightsTags(tags) {
+      const container = document.getElementById('insightsTags');
+      const colors = ['tag-blue', 'tag-violet', 'tag-green', 'tag-amber', 'tag-cyan'];
+
+      if (!tags || tags.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = tags.map((tag, i) =>
+        `<span class="tag ${colors[i % colors.length]}">
+          <i class="fa-solid fa-tag"></i> ${escHtml(tag)}
+        </span>`
+      ).join('');
+    }
+
+    // =====================================================
+    // COPY EMAIL
+    // =====================================================
+    function copyEmail() {
+      const text = document.getElementById('emailText').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Email copied to clipboard!', 'success');
+      });
+    }
+
+    // =====================================================
+    // LOAD LEAD HISTORY
+    // =====================================================
+    async function loadLeadHistory() {
+      if (!CONFIG.appsScriptUrl || CONFIG.appsScriptUrl === 'APPS_SCRIPT_WEBAPP_URL') return;
+
+      try {
+        const response = await fetch(`${CONFIG.appsScriptUrl}?action=getLeads`, { method: 'GET' });
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.leads)) {
+          allLeads = data.leads;
+          renderLeadsTable(allLeads);
+
+          // Update stat counter
+          const el = document.getElementById('stat-leads');
+          if (el) animateCounter('stat-leads', 0, allLeads.length, 1000);
+        }
+      } catch (err) {
+        console.warn('Could not load lead history:', err.message);
+      }
+    }
+
+    function renderLeadsTable(leads) {
+      const tbody = document.getElementById('leadsTableBody');
+      if (!leads || leads.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6">
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
+            <p>No leads yet. Enrich your first lead above.</p>
+          </div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = leads.map((lead, idx) => {
+        const score = parseInt(lead.leadScore) || 0;
+        const scoreClass = score >= 75 ? 'score-high' : score >= 50 ? 'score-medium' : 'score-low';
+        const scoreEmoji = score >= 75 ? '🔥' : score >= 50 ? '⚡' : '❄️';
+        return `
+          <tr>
+            <td style="color:var(--text-muted);">${idx + 1}</td>
+            <td>
+              <strong>${escHtml(lead.companyName || '—')}</strong>
+              ${lead.website ? `<br/><span style="font-size:0.75rem;color:var(--accent-blue);">${escHtml(lead.website)}</span>` : ''}
+            </td>
+            <td><span class="tag tag-blue">${escHtml(lead.industry || '—')}</span></td>
+            <td><span class="score-pill ${scoreClass}">${scoreEmoji} ${score}</span></td>
+            <td style="color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              ${escHtml(lead.targetAudience || '—')}
+            </td>
+            <td style="color:var(--text-muted);font-size:0.78rem;">${formatDate(lead.timestamp)}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    // =====================================================
+    // SEARCH / FILTER
+    // =====================================================
+    function filterLeads() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      if (!query) { renderLeadsTable(allLeads); return; }
+      const filtered = allLeads.filter(l =>
+        (l.companyName   || '').toLowerCase().includes(query) ||
+        (l.industry      || '').toLowerCase().includes(query) ||
+        (l.targetAudience|| '').toLowerCase().includes(query)
+      );
+      renderLeadsTable(filtered);
+    }
+
+    // =====================================================
+    // EXPORT CSV
+    // =====================================================
+    function exportLeads() {
+      if (!allLeads.length) { showToast('No leads to export.', 'warning'); return; }
+      const headers = ['Company', 'Website', 'Industry', 'Target Audience', 'Lead Score', 'Timestamp'];
+      const rows = allLeads.map(l => [
+        l.companyName, l.website, l.industry, l.targetAudience, l.leadScore, l.timestamp
+      ].map(v => `"${String(v || '').replace(/"/g,'""')}"`).join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `leadforge_leads_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV exported successfully!', 'success');
+    }
+
+    // =====================================================
+    // TOAST NOTIFICATIONS
+    // =====================================================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const icons = { success: 'circle-check', error: 'circle-xmark', info: 'circle-info', warning: 'triangle-exclamation' };
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <i class="fa-solid fa-${icons[type] || 'circle-info'} toast-icon"></i>
+        <span>${escHtml(message)}</span>
+      `;
+      toast.onclick = () => dismissToast(toast);
+      container.appendChild(toast);
+      setTimeout(() => dismissToast(toast), 4500);
+    }
+
+    function dismissToast(toast) {
+      toast.classList.add('fade-out');
+      toast.addEventListener('animationend', () => toast.remove());
+    }
+
+    // =====================================================
+    // UTILITIES
+    // =====================================================
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '—';
+      try {
+        return new Date(ts).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      } catch { return ts; }
+    }
+  </script>
+
+</body>
+</html>
